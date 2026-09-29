@@ -1,16 +1,35 @@
 # Raízes do Nordeste - Backend
 
-Projeto desenvolvido para a disciplina Projeto Multidisciplinar – Trilha Back-End da UNINTER.
+API REST desenvolvida para a disciplina **Projeto Multidisciplinar – Trilha Back-End da UNINTER**.
 
-## Tecnologias
+O sistema permite o gerenciamento de **usuários, clientes, produtos, unidades e estoques**, além de possuir autenticação de usuários e controle de acesso.
 
-- Java 23
-- Spring Boot
-- Maven
-- MySQL
-- Spring Data JPA
-- Hibernate
-- Postman
+---
+
+## Tecnologias utilizadas
+
+* Java 17
+* Spring Boot
+* Spring Data JPA
+* Spring Security
+* JWT
+* Hibernate
+* MySQL
+* Maven
+* Swagger
+* Postman
+
+---
+
+## Pré-requisitos
+
+Para executar o projeto, é necessário ter instalado:
+
+* Java 17
+* Maven
+* MySQL
+* IDE como Eclipse ou IntelliJ
+* Postman (opcional)
 
 ---
 
@@ -22,169 +41,122 @@ Projeto desenvolvido para a disciplina Projeto Multidisciplinar – Trilha Back-
 git clone https://github.com/adk008/raizes-do-nordeste-backend.git
 ```
 
-### 2. Abra no Eclipse
+### 2. Abra o projeto
 
-Importe como projeto Maven.
+Abra o projeto em sua IDE como um projeto **Maven** e aguarde o carregamento das dependências.
 
-### 3. Configure o banco
+### 3. Configure o banco de dados
 
 Crie um banco MySQL chamado:
 
-```
-raizesdonordeste
-```
-
-No arquivo:
-
-```
-application.properties
+```sql
+CREATE DATABASE raizes_nordeste;
 ```
 
-Configure:
+Depois, configure as informações do banco no arquivo:
+
+```text
+src/main/resources/application.properties
+```
+
+Exemplo:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/raizesdonordeste
 spring.datasource.username=root
-spring.datasource.password=suaSenha
+spring.datasource.password=sua_senha
 ```
 
-### 4. Execute
+### 4. Execute a aplicação
 
-Rode:
+Execute a classe:
 
-```
+```text
 RaizesnordesteApplication.java
 ```
 
-A API iniciará em:
+A aplicação será iniciada, por padrão, em:
 
-```
-http://localhost:8080
-```
-
----
-
-## Endpoints
-
-### Clientes
-
-GET
-
-```
-/clientes
-```
-
-POST
-
-```
-/clientes
-```
-
-PUT
-
-```
-/clientes/{id}
-```
-
-DELETE
-
-```
-/clientes/{id}
+```text
+http://localhost:8090
 ```
 
 ---
 
-### Produtos
+## Swagger
 
-GET
+A API possui documentação através do Swagger.
 
-```
-/produtos
-```
+Com a aplicação em execução, acesse:
 
-POST
-
-```
-/produtos
+```text
+http://localhost:8090/swagger-ui.html
 ```
 
-PUT
-
-```
-/produtos/{id}
-```
-
-DELETE
-
-```
-/produtos/{id}
-```
+O Swagger permite visualizar e testar os endpoints disponíveis.
 
 ---
 
-### Unidades
+## Principais endpoints
 
-GET
-
-```
-/unidades
-```
-
-POST
-
-```
-/unidades
-```
-
-PUT
-
-```
-/unidades/{id}
-```
-
-DELETE
-
-```
-/unidades/{id}
-```
+| Método | Endpoint                  | Descrição                        |
+| ------ | ------------------------- | -------------------------------- |
+| POST   | `/auth/login`             | Realiza login                    |
+| POST   | `/usuarios`               | Cadastra usuário                 |
+| GET    | `/clientes`               | Lista clientes                   |
+| GET    | `/clientes/{id}`          | Consulta cliente                 |
+| POST   | `/clientes`               | Cadastra cliente                 |
+| GET    | `/produtos`               | Lista produtos                   |
+| POST   | `/produtos`               | Cadastra produto                 |
+| PUT    | `/produtos/{id}`          | Atualiza produto                 |
+| DELETE | `/produtos/{id}`          | Exclui produto                   |
+| GET    | `/unidades`               | Lista unidades                   |
+| POST   | `/unidades`               | Cadastra unidade                 |
+| PUT    | `/unidades/{id}`          | Atualiza unidade                 |
+| DELETE | `/unidades/{id}`          | Exclui unidade                   |
+| GET    | `/estoques`               | Consulta estoques                |
+| POST   | `/estoques/movimentacoes` | Registra movimentação de estoque |
+| GET    | `/auditoria`              | Consulta registros de auditoria  |
 
 ---
 
-### Estoques
+## Autenticação
 
-GET
+O sistema utiliza **JWT** para autenticação.
 
-```
-/estoques
-```
+Para acessar os endpoints protegidos, primeiro é necessário realizar o login:
 
-POST
-
-```
-/estoques
+```http
+POST /auth/login
 ```
 
-PUT
+Após o login, o token recebido deve ser enviado nas requisições utilizando:
 
-```
-/estoques/{id}
+```http
+Authorization: Bearer SEU_TOKEN
 ```
 
-DELETE
+O sistema possui os seguintes perfis de usuário:
 
-```
-/estoques/{id}
-```
+* `ADMIN`
+* `GERENTE`
+* `CLIENTE`
 
 ---
 
 ## Testes
 
-Os testes foram realizados utilizando o Postman.
+Os endpoints podem ser testados utilizando o **Postman** ou diretamente através do **Swagger**.
+
+Para realizar os testes, primeiro execute a aplicação e depois utilize o endereço:
+
+```text
+http://localhost:8090
+```
 
 ---
 
 ## Autor
 
-Thiago Nascimento Nery
+**Thiago Nascimento Nery**
 
+Projeto desenvolvido para a disciplina **Projeto Multidisciplinar – Trilha Back-End — UNINTER**.
