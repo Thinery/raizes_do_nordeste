@@ -38,7 +38,7 @@ Para executar o projeto, é necessário ter instalado:
 ### 1. Clone o projeto
 
 ```bash
-git clone https://github.com/adk008/raizes-do-nordeste-backend.git
+git clone https://github.com/Thinery/raizes_do_nordeste.git
 ```
 
 ### 2. Abra o projeto
@@ -53,18 +53,20 @@ Crie um banco MySQL chamado:
 CREATE DATABASE raizes_nordeste;
 ```
 
-Depois, configure as informações do banco no arquivo:
+As credenciais do banco e o segredo do JWT **não ficam no código** — são lidos de variáveis de ambiente, para não expor a senha no repositório público. Copie o arquivo de exemplo e preencha com os seus dados:
 
-```text
-src/main/resources/application.properties
+```bash
+cp .env.example .env
 ```
-
-Exemplo:
 
 ```properties
-spring.datasource.username=root
-spring.datasource.password=sua_senha
+DB_NAME=raizes_nordeste
+DB_USERNAME=root
+DB_PASSWORD=sua_senha_local_do_mysql
+JWT_SECRET=troque-por-uma-string-secreta-bem-grande-e-aleatoria
 ```
+
+O arquivo `.env` está no `.gitignore` e nunca deve ser commitado. Se estiver rodando pela IDE (Eclipse/IntelliJ), configure essas mesmas variáveis em *Run Configurations → Environment Variables* em vez de usar o `.env`.
 
 ### 4. Execute a aplicação
 
@@ -79,6 +81,20 @@ A aplicação será iniciada, por padrão, em:
 ```text
 http://localhost:8090
 ```
+
+---
+
+## Dados de teste (seed automático)
+
+Ao subir a aplicação pela primeira vez, ela já cria automaticamente unidades, produtos e um usuário de cada perfil, para facilitar os testes:
+
+| Perfil    | E-mail                           | Senha        |
+| --------- | -------------------------------- | ------------ |
+| ADMIN     | admin@raizesdonordeste.com       | admin123     |
+| GERENTE   | gerente@raizesdonordeste.com     | gerente123   |
+| CLIENTE   | cliente@raizesdonordeste.com     | cliente123   |
+
+Use essas credenciais em `POST /auth/login` para obter o token JWT.
 
 ---
 
@@ -98,24 +114,30 @@ O Swagger permite visualizar e testar os endpoints disponíveis.
 
 ## Principais endpoints
 
-| Método | Endpoint                  | Descrição                        |
-| ------ | ------------------------- | -------------------------------- |
-| POST   | `/auth/login`             | Realiza login                    |
-| POST   | `/usuarios`               | Cadastra usuário                 |
-| GET    | `/clientes`               | Lista clientes                   |
-| GET    | `/clientes/{id}`          | Consulta cliente                 |
-| POST   | `/clientes`               | Cadastra cliente                 |
-| GET    | `/produtos`               | Lista produtos                   |
-| POST   | `/produtos`               | Cadastra produto                 |
-| PUT    | `/produtos/{id}`          | Atualiza produto                 |
-| DELETE | `/produtos/{id}`          | Exclui produto                   |
-| GET    | `/unidades`               | Lista unidades                   |
-| POST   | `/unidades`               | Cadastra unidade                 |
-| PUT    | `/unidades/{id}`          | Atualiza unidade                 |
-| DELETE | `/unidades/{id}`          | Exclui unidade                   |
-| GET    | `/estoques`               | Consulta estoques                |
-| POST   | `/estoques/movimentacoes` | Registra movimentação de estoque |
-| GET    | `/auditoria`              | Consulta registros de auditoria  |
+`page` é 1-based (page=1 é a primeira página). Acesso: **público** = qualquer pessoa; **logado** = precisa de token válido, qualquer perfil; **ADMIN/GERENTE** e **ADMIN** = precisa do perfil indicado.
+
+| Método | Endpoint                     | Descrição                                   | Acesso        |
+| ------ | ----------------------------- | -------------------------------------------- | ------------- |
+| POST   | `/auth/login`                 | Realiza login, devolve o token JWT            | público       |
+| POST   | `/usuarios`                   | Cadastra usuário                              | público       |
+| GET    | `/clientes`                   | Lista clientes                                | logado        |
+| GET    | `/clientes/{id}`              | Consulta cliente                              | logado        |
+| POST   | `/clientes`                   | Cadastra cliente (exige consentimento LGPD)   | logado        |
+| GET    | `/produtos?page=1&limit=10`   | Lista produtos paginados                      | público       |
+| GET    | `/produtos/{id}`              | Consulta produto                              | público       |
+| POST   | `/produtos`                   | Cadastra produto                              | logado        |
+| PUT    | `/produtos/{id}`              | Atualiza produto                              | logado        |
+| DELETE | `/produtos/{id}`              | Exclui produto                                | logado        |
+| GET    | `/unidades`                   | Lista unidades                                | público       |
+| GET    | `/unidades/{id}`              | Consulta unidade                              | público       |
+| GET    | `/unidades/{id}/estoque`      | Saldo de estoque da unidade                   | público       |
+| POST   | `/unidades`                   | Cadastra unidade                              | logado        |
+| PUT    | `/unidades/{id}`              | Atualiza unidade                              | logado        |
+| DELETE | `/unidades/{id}`              | Exclui unidade                                | logado        |
+| GET    | `/estoques`                   | Lista o saldo de todos os produtos/unidades   | público       |
+| GET    | `/estoques/{id}`              | Consulta um registro de saldo                 | público       |
+| POST   | `/estoques/movimentacoes`     | Registra entrada/saída (409 se saldo insuficiente) | ADMIN/GERENTE |
+| GET    | `/auditoria`                  | Consulta registros de auditoria               | ADMIN         |
 
 ---
 
@@ -140,6 +162,31 @@ O sistema possui os seguintes perfis de usuário:
 * `ADMIN`
 * `GERENTE`
 * `CLIENTE`
+
+---
+
+## Formato padrão de erro
+
+Toda resposta de erro segue o mesmo formato:
+
+```json
+{
+  "error": "ESTOQUE_INSUFICIENTE",
+  "message": "Nao ha quantidade suficiente em estoque para esta unidade. Disponivel: 5",
+  "details": [],
+  "timestamp": "2026-09-29T10:15:30Z",
+  "path": "/estoques/movimentacoes",
+  "requestId": "b3f1..."
+}
+```
+
+| Situação                              | HTTP |
+| -------------------------------------- | ---- |
+| Dado inválido (ex.: preço negativo)    | 422  |
+| Sem token / token inválido             | 401  |
+| Perfil sem permissão para a ação       | 403  |
+| Recurso não encontrado                 | 404  |
+| Regra de negócio violada (ex.: estoque insuficiente) | 409 |
 
 ---
 
