@@ -2,51 +2,52 @@ package raizesnordeste.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import raizesnordeste.model.Estoque;
+import jakarta.validation.Valid;
+import raizesnordeste.dto.MovimentacaoRequest;
+import raizesnordeste.dto.MovimentacaoResponse;
+import raizesnordeste.dto.SaldoEstoqueResponse;
+import raizesnordeste.exception.RecursoNaoEncontradoException;
 import raizesnordeste.repository.EstoqueRepository;
+import raizesnordeste.service.EstoqueService;
 
 @RestController
 @RequestMapping("/estoques")
 public class EstoqueController {
 
-    @Autowired
-    private EstoqueRepository repository;
+    private final EstoqueRepository repository;
+    private final EstoqueService estoqueService;
 
+    public EstoqueController(EstoqueRepository repository, EstoqueService estoqueService) {
+        this.repository = repository;
+        this.estoqueService = estoqueService;
+    }
+
+    /** Consulta publica do saldo (todas as unidades/produtos). */
     @GetMapping
-    public List<Estoque> listar() {
-        return repository.findAll();
+    public List<SaldoEstoqueResponse> listar() {
+        return repository.findAll().stream().map(SaldoEstoqueResponse::de).toList();
     }
 
     @GetMapping("/{id}")
-    public Estoque buscarPorId(@PathVariable Long id) {
-        return repository.findById(id).orElse(null);
+    public SaldoEstoqueResponse buscarPorId(@PathVariable Long id) {
+        return SaldoEstoqueResponse.de(repository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("ESTOQUE_NAO_ENCONTRADO", "registro de estoque nao encontrado.")));
     }
 
-    @PostMapping
-    public Estoque salvar(@RequestBody Estoque estoque) {
-        return repository.save(estoque);
-    }
-
-    @PutMapping("/{id}")
-    public Estoque atualizar(@PathVariable Long id, @RequestBody Estoque estoque) {
-        Estoque existente = repository.findById(id).orElse(null);
-
-        if (existente == null) {
-            return null;
-        }
-
-        existente.setProduto(estoque.getProduto());
-        existente.setUnidade(estoque.getUnidade());
-        existente.setQuantidade(estoque.getQuantidade());
-
-        return repository.save(existente);
-    }
-
-    @DeleteMapping("/{id}")
-    public void excluir(@PathVariable Long id) {
-        repository.deleteById(id);
+    /**
+     * Fluxo critico (Fluxo B): registra entrada ou saida de estoque de um
+     * produto em uma unidade e atualiza o saldo. Exige token JWT com perfil
+     * ADMIN ou GERENTE (ver SecurityConfig) - retorna 401 sem token e 403
+     * para outros perfis.
+     */
+    @PostMapping("/movimentacoes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MovimentacaoResponse movimentar(@Valid @RequestBody MovimentacaoRequest request, Authentication authentication) {
+        String usuario = authentication != null ? authentication.getName() : null;
+        return estoqueService.movimentar(request, usuario);
     }
 }

@@ -2,21 +2,25 @@ package raizesnordeste.model;
 
 import jakarta.persistence.*;
 
+/**
+ * Representa o SALDO atual de um produto em uma unidade.
+ * O historico de entradas/saidas fica em MovimentacaoEstoque.
+ */
 @Entity
-@Table(name = "estoques")
+@Table(name = "estoques", uniqueConstraints = @UniqueConstraint(columnNames = {"produto_id", "unidade_id"}))
 public class Estoque {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Produto produto;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Unidade unidade;
 
-    private Integer quantidade;
+    private Integer quantidade = 0;
 
     public Estoque() {
     }
