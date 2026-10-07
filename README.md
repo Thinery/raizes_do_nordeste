@@ -190,14 +190,30 @@ Toda resposta de erro segue o mesmo formato:
 
 ---
 
-## Testes
+## Testes e evidências
 
-Os endpoints podem ser testados utilizando o **Postman** ou diretamente através do **Swagger**.
+A coleção Postman completa está em `/Postman/Raizes do Nordeste API.postman_collection.json`, organizada em 4 pastas (Auth, Produtos, Estoque, Auditoria), com 11 cenários (6 positivos, 5 negativos). Os tokens de ADMIN e CLIENTE são salvos automaticamente nas variáveis da coleção após o login — basta rodar `T01` e `T01b` antes dos demais.
 
-Para realizar os testes, primeiro execute a aplicação e depois utilize o endereço:
+Evidência real de execução (ambiente local, MySQL, `localhost:8090`):
+
+| ID | Cenário | Resultado obtido |
+| --- | --- | --- |
+| T01 | Login válido (ADMIN) | `200` + `accessToken` |
+| T02 | Login com senha incorreta | `401` + `CREDENCIAIS_INVALIDAS` |
+| T03 | Cadastrar produto | `201` — produto criado (id 3, "Suco de Caju") |
+| T04 | Cadastrar produto com preço inválido | `422` + `DADOS_INVALIDOS` (campo `preco`) |
+| T05 | Listar produtos paginados | `200` + lista paginada |
+| T06 | Movimentar estoque — ENTRADA (ADMIN) | `201` — saldo atualizado para 50 |
+| T07 | Movimentar estoque sem token | `401` + `NAO_AUTENTICADO` |
+| T08 | Movimentar estoque com perfil CLIENTE | `403` + `SEM_PERMISSAO` |
+| T09 | Movimentar SAIDA maior que o saldo | `409` + `ESTOQUE_INSUFICIENTE` (disponível: 50) |
+| T10 | Consultar produto inexistente | `404` + `PRODUTO_NAO_ENCONTRADO` |
+| T11 | Consultar auditoria (ADMIN) | `200` + log de `MOVIMENTACAO_ESTOQUE` referente a T06 |
+
+Também é possível explorar e testar manualmente pelo **Swagger**, com a aplicação em execução, no endereço:
 
 ```text
-http://localhost:8090
+http://localhost:8090/swagger-ui.html
 ```
 
 ---
