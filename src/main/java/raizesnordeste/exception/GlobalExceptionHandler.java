@@ -49,6 +49,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenerico(Exception ex, WebRequest request) {
+        System.err.println("===== ERRO_INTERNO (causa real) em " + path(request) + " =====");
+        ex.printStackTrace();
         ApiError body = ApiError.of("ERRO_INTERNO", "Ocorreu um erro inesperado.", List.of(), path(request));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
